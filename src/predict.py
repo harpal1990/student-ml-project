@@ -1,13 +1,16 @@
+from pathlib import Path
 import pandas as pd
 import joblib
 
 from utils import load_config
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 config = load_config()
 
-model = joblib.load(
-    "../" + config["paths"]["model"]
-)
+MODEL_PATH = BASE_DIR / config["paths"]["model"]
+
+model = joblib.load(MODEL_PATH)
 
 student = pd.DataFrame([
     {

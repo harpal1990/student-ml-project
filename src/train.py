@@ -7,14 +7,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
 
-# Load data
+from pathlib import Path
 from utils import load_config
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 config = load_config()
 
-data = pd.read_csv(
-    "../" + config["paths"]["dataset"]
-)
+DATASET_PATH = BASE_DIR / config["paths"]["dataset"]
+
+data = pd.read_csv(DATASET_PATH)
 
 # Features
 X = data[
@@ -62,9 +64,11 @@ for feature, weight in zip(X.columns, model.coef_):
 print(f"\nIntercept: {model.intercept_}")
 
 # Save model
+MODEL_PATH = BASE_DIR / config["paths"]["model"]
+
 joblib.dump(
     model,
-    "../" + config["paths"]["model"]
+    MODEL_PATH
 )
 
 print("\nModel saved as student_model.pkl")
