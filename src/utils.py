@@ -1,8 +1,12 @@
+from pathlib import Path
 import yaml
 
 def load_config():
+    # Project root directory
+    BASE_DIR = Path(__file__).resolve().parent.parent
 
-    with open("../config/config.yaml", "r") as file:
-        config = yaml.safe_load(file)
+    # config/config.yaml
+    config_path = BASE_DIR / "config" / "config.yaml"
 
-    return config
+    with open(config_path, "r") as file:
+        return yaml.safe_load(file)
