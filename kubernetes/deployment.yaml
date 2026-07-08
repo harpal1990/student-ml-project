@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+
+
+metadata:
+  name: student-ml-api
+  namespace: mlops-dev
+
+  labels:
+    app: student-ml-api
+    environment: development
+    version: "1.0"
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: student-ml-api
+
+  template:
+
+    metadata:
+      labels:
+        app: student-ml-api
+        environment: development
+        version: "1.0"
+
+    spec:
+
+      containers:
+
+      - name: student-ml-api
+        image: student-m1-api:v1
+        imagePullPolicy: Never
+
+        ports:
+        - containerPort: 8000
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
