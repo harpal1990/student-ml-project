@@ -1,15 +1,30 @@
-venv/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.so
 
+# Virtual Environment
+venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Python cache
+.pytest_cache/
+.mypy_cache/
+
+# Logs
+*.log
+
+# MLflow
 mlruns/
 mlflow.db
 
-models/*.pkl
+# Model files (optional)
+# models/*.pkl
 
-*.log
-
-.idea/
-.vscode/
-
-.env
+# OS
+.DS_Store
+Thumbs.db
