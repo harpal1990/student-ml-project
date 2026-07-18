@@ -3,6 +3,7 @@ kind: Service
 
 metadata:
   name: student-ml-service
+  namespace: mlops-dev
 
 spec:
 
