@@ -67,6 +67,20 @@ pipeline {
             }
         }
 
+        stage('Verify Kind Cluster') {
+            steps {
+                sh '''
+                if ! kind get clusters | grep -q "^kind$"
+                then
+                echo "Kind cluster not found!"
+            exit 1
+        fi
+
+        kubectl cluster-info
+        '''
+    }
+}
+
         stage('Load Image into Kind') {
             steps {
                 sh '''
