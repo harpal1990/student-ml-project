@@ -24,8 +24,10 @@ pipeline {
             steps {
                 sh '''
                 echo "===== Environment ====="
+
                 whoami
                 pwd
+
                 docker --version
                 kubectl version --client
                 kind version
@@ -61,8 +63,7 @@ pipeline {
             steps {
                 sh '''
                 docker build \
-                -t ${IMAGE_NAME}:${IMAGE_TAG} \
-                .
+                -t ${IMAGE_NAME}:${IMAGE_TAG} .
                 '''
             }
         }
@@ -70,22 +71,34 @@ pipeline {
         stage('Verify Kind Cluster') {
             steps {
                 sh '''
-                if ! kind get clusters | grep -q "^kind$"
-                then
-                echo "Kind cluster not found!"
-            exit 1
-        fi
+                kind get clusters | grep "^kind$"
 
-        kubectl cluster-info
-        '''
-    }
-}
+                kubectl cluster-info
+                '''
+            }
+        }
 
         stage('Load Image into Kind') {
             steps {
                 sh '''
-                kind load docker-image \
-                ${IMAGE_NAME}:${IMAGE_TAG}
+                kind load docker-image ${IMAGE_NAME}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+        stage('Create Namespace') {
+            steps {
+                sh '''
+                kubectl create namespace ${K8S_NAMESPACE} \
+                --dry-run=client -o yaml | kubectl apply -f -
+                '''
+            }
+        }
+
+        stage('Deploy Kubernetes Resources') {
+            steps {
+                sh '''
+                kubectl apply -f kubernetes/
                 '''
             }
         }
@@ -112,9 +125,21 @@ pipeline {
         stage('Smoke Test') {
             steps {
                 sh '''
+                echo "===== Pods ====="
+
                 kubectl get pods -n ${K8S_NAMESPACE}
 
+                echo ""
+
+                echo "===== Services ====="
+
                 kubectl get svc -n ${K8S_NAMESPACE}
+
+                echo ""
+
+                echo "===== Deployment ====="
+
+                kubectl get deployment -n ${K8S_NAMESPACE}
                 '''
             }
         }
@@ -127,23 +152,29 @@ pipeline {
 
             sh '''
             docker image prune -f
+
+            docker images ${IMAGE_NAME} \
+            --format "{{.Repository}}:{{.Tag}}" \
+            | sort -V \
+            | head -n -5 \
+            | xargs -r docker rmi || true
             '''
 
         }
 
         success {
 
-            echo "=================================="
-            echo "Deployment Successful"
-            echo "=================================="
+            echo "======================================"
+            echo "Build #${BUILD_NUMBER} Deployed Successfully"
+            echo "======================================"
 
         }
 
         failure {
 
-            echo "=================================="
+            echo "======================================"
             echo "Deployment Failed"
-            echo "=================================="
+            echo "======================================"
 
         }
 
