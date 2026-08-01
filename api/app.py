@@ -36,7 +36,7 @@ class Student(BaseModel):
 @app.get("/")
 def home():
     return {
-        "message": "Student ML API is running successfully!"
+        "message": "Student ML API is running successfully V1!"
     }
 
 # ----------------------------
