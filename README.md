@@ -1,233 +1,365 @@
-# CI/CD for Machine Learning API using Jenkins | MLOps Series - Episode 5
+# Package Kubernetes Applications using Helm | MLOps Series - Episode 6
 
-Welcome to **Episode 5** of the MLOps Series.
+Welcome to **Episode 6** of the MLOps Series.
 
-In this episode, we'll automate the deployment of our **Student Score Prediction API** using **Jenkins CI/CD**. Every code change pushed to GitHub will automatically trigger a Jenkins pipeline that builds, trains, packages, and deploys the application to our Kubernetes (Kind) cluster.
+In the previous episode, we automated the deployment of our Student Score Prediction API using **Jenkins CI/CD**.
 
----
+As our application grows, managing multiple Kubernetes YAML files becomes difficult. In this episode, we'll solve that problem using **Helm**, the package manager for Kubernetes.
 
-## 🎯 What You'll Learn
-
-- Introduction to Continuous Integration (CI)
-- Introduction to Continuous Delivery (CD)
-- Why CI/CD is important in MLOps
-- Jenkins Architecture
-- Installing Jenkins on Ubuntu
-- Creating a Jenkins Pipeline
-- Connecting Jenkins with GitHub
-- Creating a Jenkinsfile
-- Building Docker Images automatically
-- Training the ML Model inside the Pipeline
-- Loading Docker Images into Kind Cluster
-- Updating Kubernetes Deployment
-- Verifying Rollout Status
-- Smoke Testing the Application
+By the end of this video, you'll know how to package, configure, install, upgrade, and rollback Kubernetes applications using Helm.
 
 ---
 
-# CI/CD Workflow
+# 🎯 What You'll Learn
+
+- What is Helm?
+- Why Helm is needed
+- Problems with plain Kubernetes YAML files
+- Helm Architecture
+- Helm Charts
+- Installing Helm
+- Creating a Helm Chart
+- Understanding Chart.yaml
+- Understanding values.yaml
+- Helm Templates
+- Deploying our Student ML API using Helm
+- Upgrading Helm Releases
+- Rollback a Release
+- Helm Best Practices
+
+---
+
+# Why Helm?
+
+Imagine your application contains:
+
+- Deployment
+- Service
+- Ingress
+- ConfigMap
+- Secret
+- Horizontal Pod Autoscaler
+- Persistent Volume
+- Persistent Volume Claim
+
+Managing all these YAML files manually becomes difficult.
+
+For every environment (Dev, QA, Production), you'll need separate YAML files.
+
+Helm solves this problem.
+
+---
+
+# Without Helm
+
+```
+deployment-dev.yaml
+deployment-qa.yaml
+deployment-prod.yaml
+
+service-dev.yaml
+service-qa.yaml
+service-prod.yaml
+
+configmap-dev.yaml
+configmap-qa.yaml
+configmap-prod.yaml
+```
+
+Lots of duplication.
+
+---
+
+# With Helm
+
+```
+One Helm Chart
+
+↓
+
+values-dev.yaml
+
+values-qa.yaml
+
+values-prod.yaml
+```
+
+One template
+
+Multiple environments
+
+---
+
+# What is Helm?
+
+Helm is the package manager for Kubernetes.
+
+Just like
+
+- apt → Ubuntu
+- yum → RHEL
+- npm → NodeJS
+- pip → Python
+
+Helm manages Kubernetes applications.
+
+Instead of writing dozens of YAML files, we create reusable templates.
+
+---
+
+# Helm Architecture
 
 ```
 Developer
-      │
-      ▼
-Push Code to GitHub
-      │
-      ▼
-Jenkins Pipeline
-      │
-      ├── Checkout Code
-      ├── Install Python Dependencies
-      ├── Train ML Model
-      ├── Build Docker Image
-      ├── Load Image into Kind
-      ├── Deploy to Kubernetes
-      ├── Verify Rollout
-      └── Smoke Test
-      │
-      ▼
-Student ML API Running
+
+     │
+
+     ▼
+
+Helm Chart
+
+     │
+
+     ▼
+
+Values.yaml
+
+     │
+
+     ▼
+
+Templates
+
+     │
+
+     ▼
+
+Kubernetes Cluster
 ```
 
 ---
 
-# Project Architecture
+# Our Existing Project
 
 ```
-                GitHub
-                   │
-                   ▼
-              Jenkins Pipeline
-                   │
-        ┌──────────┴──────────┐
-        │                     │
-        ▼                     ▼
- Train ML Model        Build Docker Image
-        │                     │
-        └──────────┬──────────┘
-                   ▼
-          Load Image into Kind
-                   │
-                   ▼
-        Kubernetes Deployment
-                   │
-                   ▼
-        Student ML REST API
+student-ml-project
+
+api/
+
+src/
+
+Dockerfile
+
+Jenkinsfile
+
+kubernetes/
+    deployment.yaml
+    service.yaml
+```
+
+We'll convert the Kubernetes folder into a Helm Chart.
+
+---
+
+# Installing Helm
+
+Ubuntu
+
+```bash
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+```
+
+Verify
+
+```bash
+helm version
 ```
 
 ---
 
-# Project Structure
+# Create Helm Chart
+
+```bash
+helm create student-ml-chart
+```
+
+Project
+
+```
+student-ml-chart
+
+Chart.yaml
+
+values.yaml
+
+templates/
+
+charts/
+
+README.md
+```
+
+---
+
+# Chart.yaml
+
+Contains metadata
+
+- Chart Name
+- Version
+- Description
+- Application Version
+
+---
+
+# values.yaml
+
+Stores configurable values
+
+Example
+
+```yaml
+replicaCount: 2
+
+image:
+  repository: student-m1-api
+  tag: "17"
+
+service:
+  type: NodePort
+  port: 8000
+
+namespace: mlops-dev
+```
+
+---
+
+# Templates
+
+Instead of hardcoding values
+
+Deployment
+
+```
+replicas: 2
+```
+
+We'll write
+
+```
+replicas: {{ .Values.replicaCount }}
+```
+
+Now changing values.yaml automatically updates the deployment.
+
+---
+
+# Deploy using Helm
+
+Install
+
+```bash
+helm install student-ml student-ml-chart \
+-n mlops-dev
+```
+
+Check
+
+```bash
+helm list -n mlops-dev
+```
+
+Pods
+
+```bash
+kubectl get pods -n mlops-dev
+```
+
+---
+
+# Upgrade Application
+
+```bash
+helm upgrade student-ml student-ml-chart \
+-n mlops-dev
+```
+
+---
+
+# Rollback
+
+Show history
+
+```bash
+helm history student-ml \
+-n mlops-dev
+```
+
+Rollback
+
+```bash
+helm rollback student-ml 1 \
+-n mlops-dev
+```
+
+---
+
+# Uninstall
+
+```bash
+helm uninstall student-ml \
+-n mlops-dev
+```
+
+---
+
+# Benefits of Helm
+
+✔ Reusable Templates
+
+✔ Version Control
+
+✔ Easy Upgrades
+
+✔ Easy Rollbacks
+
+✔ Environment Specific Configuration
+
+✔ Less YAML
+
+✔ Production Ready
+
+---
+
+# Project Structure After Helm
 
 ```
 student-ml-project/
 
-├── api/
-├── config/
-├── data/
-├── kubernetes/
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   └── namespace.yaml
-├── models/
-├── src/
-├── Dockerfile
-├── Jenkinsfile
-├── requirements.txt
-└── README.md
+api/
+
+src/
+
+Dockerfile
+
+Jenkinsfile
+
+helm/
+
+└── student-ml-chart/
+    ├── Chart.yaml
+    ├── values.yaml
+    ├── charts/
+    └── templates/
+        ├── deployment.yaml
+        ├── service.yaml
+        ├── _helpers.tpl
+        └── NOTES.txt
 ```
-
----
-
-# Jenkins Pipeline Stages
-
-✔ Checkout Source Code
-
-✔ Install Dependencies
-
-✔ Train Machine Learning Model
-
-✔ Build Docker Image
-
-✔ Verify Kind Cluster
-
-✔ Load Image into Kind
-
-✔ Create Namespace
-
-✔ Deploy Kubernetes Resources
-
-✔ Update Deployment
-
-✔ Verify Rollout
-
-✔ Smoke Test
-
----
-
-# Technologies Used
-
-- Python
-- FastAPI
-- Scikit-Learn
-- Pandas
-- Docker
-- Kubernetes
-- Kind Cluster
-- Jenkins
-- GitHub
-- YAML
-- Linux (Ubuntu)
-
----
-
-# Prerequisites
-
-- Ubuntu Linux
-- Docker Installed
-- Kind Cluster
-- kubectl
-- Jenkins
-- Python 3
-- Git
-
----
-
-# Clone Repository
-
-```bash
-git clone https://github.com/harpal1990/student-ml-project.git
-
-cd student-ml-project
-```
-
----
-
-# Jenkins Pipeline
-
-The pipeline automatically performs the following tasks:
-
-- Clone Repository
-- Install Dependencies
-- Train Model
-- Build Docker Image
-- Load Image into Kind Cluster
-- Deploy Application
-- Verify Deployment
-- Display Kubernetes Resources
-
-No manual deployment is required.
-
----
-
-# Verify Deployment
-
-```bash
-kubectl get pods -n mlops-dev
-
-kubectl get deployment -n mlops-dev
-
-kubectl get svc -n mlops-dev
-```
-
----
-
-# Access Application
-
-```
-http://localhost:8000
-```
-
-Swagger UI
-
-```
-http://localhost:8000/docs
-```
-
-Health Check
-
-```
-http://localhost:8000/health
-```
-
----
-
-# Jenkins Dashboard
-
-You can monitor:
-
-- Build History
-- Console Output
-- Pipeline Stages
-- Deployment Status
-- Failed Builds
-- Successful Deployments
 
 ---
 
 # Source Code
-
-GitHub Repository
 
 https://github.com/harpal1990/student-ml-project
 
@@ -247,11 +379,16 @@ Dockerize Machine Learning API
 Episode 4
 Deploy Machine Learning API on Kubernetes using Kind
 
+Episode 5
+CI/CD for Machine Learning API using Jenkins
+
 ---
 
 # Next Episode
 
-Package Kubernetes Applications using Helm
+GitOps using Argo CD
+
+Automatically Deploy Applications from GitHub to Kubernetes
 
 ---
 
